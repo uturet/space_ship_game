@@ -1,11 +1,13 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 
 type Window = 'console' | 'script'
 
 
-function Main (): JSX.Element {
+function Interface (): JSX.Element {
+  const consoleRef = useRef<HTMLInputElement>(null)
+  // https://gist.github.com/dferber90/a7e636e6dfa0178c016ed488a6557273
   const [isConsoleActive, setIsConsoleActive] = useState<boolean>(false)
-  const [isHidden, setIsHidden] = useState<boolean>(false)
+  const [isHidden, setIsHidden] = useState<boolean>(true)
   const [active, setActive] = useState<Window>('console')
   const [consoleHistory, setConsoleHistory] = useState<string[]>([])
   const availableObjects: string[] = [
@@ -23,6 +25,12 @@ function Main (): JSX.Element {
     'shield.on',
     'shield.off'
   ]
+
+  useEffect(() => {
+    if (consoleRef?.current != null) {
+      consoleRef.current.focus()
+    }
+  }, [consoleRef])
 
   if (isHidden) {
     return <div
@@ -56,7 +64,6 @@ function Main (): JSX.Element {
           className="text-white px-3 py-1 mr-3 mb-3 bg-gray-800 hover:bg-gray-500"
           draggable={true}
           onDragEnd={() => {
-            console.log('End')
             if (isConsoleActive) {
               setIsConsoleActive(false)
               setConsoleHistory((h) => [...h, v])
@@ -79,14 +86,34 @@ function Main (): JSX.Element {
         onDrop={(e) => {
           e.preventDefault()
         }}
+        onClick={() => {
+          if (consoleRef?.current != null) {
+            consoleRef.current.focus()
+          }
+        }}
 
-        className={'overflow-y-scroll flex-grow p-3 ' +
+        className={'overflow-y-scroll flex-grow p-3 flex flex-col justify-end ' +
          (active === 'script' ? 'hidden ' : '') +
          (isConsoleActive ? 'shadow-[inset_3px_3px_0_0_rgba(132,204,22,0.5)]' : '')}>
         {consoleHistory.map((v, i) => (<div
           className="text-white text-left pointer-events-none"
           key={i.toString()}>{v}</div>))
         }
+        <div className='text-white text-left'> {' > '}
+          <span
+            id="console"
+            ref={consoleRef}
+            onKeyDown={(e) => {
+              if (e.code === 'Enter' && consoleRef?.current != null) {
+                e.preventDefault()
+                const tmpValue = consoleRef.current.innerText
+                consoleRef.current.innerText = ''
+                setConsoleHistory((h) => [...h, tmpValue])
+              }
+            }}
+            className="ml-1 focus-outline-none outline-none"
+            contentEditable={true}></span>
+        </div>
       </div>
       <div className={'overflow-hidden flex-grow ' + (active === 'console' ? 'hidden' : '')}>
         script
@@ -96,4 +123,4 @@ function Main (): JSX.Element {
 }
 
 
-export default Main
+export default Interface
